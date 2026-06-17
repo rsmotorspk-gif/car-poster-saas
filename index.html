@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Car Poster SaaS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="app">
+
+    <h1>🚗 Car Poster Maker</h1>
+
+    <div class="form">
+
+      <input id="name" placeholder="Car Name (e.g Civic 2020)">
+      <input id="price" placeholder="Price (e.g 35 Lac)">
+      <input id="mileage" placeholder="Mileage (e.g 50000 km)">
+      <input id="city" placeholder="City (e.g Lahore)">
+
+      <button onclick="generate()">Generate Poster</button>
+
+      <button onclick="downloadPoster()">Download Poster</button>
+      <button onclick="shareWhatsApp()">Share WhatsApp</button>
+
+    </div>
+
+    <div class="poster" id="poster">
+
+      <h2 id="pName">Car Name</h2>
+      <p id="pPrice">Price</p>
+      <p id="pMileage">Mileage</p>
+      <p id="pCity">City</p>
+
+    </div>
+
+  </div>
+
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="script.js"></script>
+
+</body>
+</html>
