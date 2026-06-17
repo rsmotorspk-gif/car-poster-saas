@@ -1,3 +1,17 @@
+let uploadedImage = "";
+
+document.getElementById("carImage").addEventListener("change", function(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    uploadedImage = e.target.result;
+    document.getElementById("posterImage").src = uploadedImage;
+  }
+
+  reader.readAsDataURL(file);
+});
+
 function generate() {
   document.getElementById("pName").innerText =
     document.getElementById("name").value;
@@ -38,16 +52,3 @@ ${name}
   let url = "https://wa.me/?text=" + encodeURIComponent(text);
   window.open(url, "_blank");
 }
-let uploadedImage = "";
-
-document.getElementById("carImage").addEventListener("change", function(event) {
-  const file = event.target.files[0];
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-    uploadedImage = e.target.result;
-    document.getElementById("posterImage").src = uploadedImage;
-  }
-
-  reader.readAsDataURL(file);
-});
