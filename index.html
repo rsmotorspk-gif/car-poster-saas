@@ -10,9 +10,11 @@
 
   <div class="app">
 
-    <h1>🚗 Car Poster Maker</h1>
+    <h1>🚗 Car Poster Maker PRO</h1>
 
-    <input type="file" id="carImage" accept="image/*">
+    <div class="form">
+
+      <input type="file" id="carImage" accept="image/*">
 
       <input id="name" placeholder="Car Name (e.g Civic 2020)">
       <input id="price" placeholder="Price (e.g 35 Lac)">
@@ -20,13 +22,14 @@
       <input id="city" placeholder="City (e.g Lahore)">
 
       <button onclick="generate()">Generate Poster</button>
-
       <button onclick="downloadPoster()">Download Poster</button>
       <button onclick="shareWhatsApp()">Share WhatsApp</button>
 
     </div>
 
     <div class="poster" id="poster">
+
+      <img id="posterImage" />
 
       <h2 id="pName">Car Name</h2>
       <p id="pPrice">Price</p>
