@@ -1,47 +1,762 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Car Poster SaaS</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aeroplane Run</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --sky: #8bd6ff;
+      --deep: #12507a;
+      --ink: #102033;
+      --panel: rgba(10, 25, 44, 0.78);
+      --line: rgba(255, 255, 255, 0.24);
+      --good: #38d67a;
+      --bad: #ff5c6f;
+      --gold: #ffd35b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(#58b9ef 0%, #bdeeff 54%, #f8d698 100%);
+      color: white;
+    }
+
+    .game-shell {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+
+    canvas {
+      width: min(100vw - 28px, 1040px);
+      height: min(100vh - 28px, 660px);
+      max-height: 660px;
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      border-radius: 8px;
+      box-shadow: 0 24px 70px rgba(5, 25, 45, 0.38);
+      background: var(--sky);
+      touch-action: none;
+    }
+
+    .hud {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      width: min(100vw - 38px, 1000px);
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 10px 28px rgba(4, 18, 32, 0.22);
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .bar {
+      width: 82px;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .bar span {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: var(--good);
+      transform-origin: left center;
+    }
+
+    .bar.fuel span {
+      background: var(--gold);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    button {
+      width: 42px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: white;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(4, 18, 32, 0.22);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(5, 16, 30, 0.18);
+      pointer-events: none;
+    }
+
+    .modal {
+      width: min(92vw, 460px);
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(9, 26, 43, 0.88);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+      text-align: center;
+      pointer-events: auto;
+      backdrop-filter: blur(10px);
+    }
+
+    .modal h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 6vw, 44px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .modal p {
+      margin: 0 0 18px;
+      color: rgba(255, 255, 255, 0.82);
+      line-height: 1.45;
+    }
+
+    .start {
+      width: auto;
+      min-width: 150px;
+      padding: 0 18px;
+      font-size: 16px;
+    }
+
+    .touch-pad {
+      position: fixed;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      display: none;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .touch-group {
+      display: grid;
+      grid-template-columns: repeat(3, 48px);
+      grid-template-rows: repeat(2, 44px);
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .touch-group .up {
+      grid-column: 2;
+    }
+
+    .touch-group .left {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .touch-group .down {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .touch-group .right {
+      grid-column: 3;
+      grid-row: 2;
+    }
+
+    .fire-touch {
+      align-self: end;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      pointer-events: auto;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 720px), (pointer: coarse) {
+      .touch-pad {
+        display: flex;
+      }
+
+      .hud {
+        top: 12px;
+        align-items: flex-start;
+      }
+
+      .pill {
+        min-height: 30px;
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+
+      .bar {
+        width: 58px;
+      }
+    }
+  </style>
 </head>
-
 <body>
+  <main class="game-shell" aria-label="Aeroplane game">
+    <canvas id="game" width="1040" height="660"></canvas>
+  </main>
 
-  <div class="app">
-
-    <h1>🚗 Car Poster Maker PRO</h1>
-
-    <div class="form">
-
-      <input type="file" id="carImage" accept="image/*">
-
-      <input id="name" placeholder="Car Name (e.g Civic 2020)">
-      <input id="price" placeholder="Price (e.g 35 Lac)">
-      <input id="mileage" placeholder="Mileage (e.g 50000 km)">
-      <input id="city" placeholder="City (e.g Lahore)">
-
-      <button onclick="generate()">Generate Poster</button>
-      <button onclick="downloadPoster()">Download Poster</button>
-      <button onclick="shareWhatsApp()">Share WhatsApp</button>
-
+  <div class="hud">
+    <div class="stats">
+      <div class="pill">Score <span id="score">0</span></div>
+      <div class="pill">Best <span id="best">0</span></div>
+      <div class="pill">Health <span class="bar"><span id="healthBar"></span></span></div>
+      <div class="pill">Fuel <span class="bar fuel"><span id="fuelBar"></span></span></div>
     </div>
-
-    <div class="poster" id="poster">
-
-      <img id="posterImage" />
-
-      <h2 id="pName">Car Name</h2>
-      <p id="pPrice">Price</p>
-      <p id="pMileage">Mileage</p>
-      <p id="pCity">City</p>
-
+    <div class="actions">
+      <button id="pauseBtn" type="button" title="Pause">II</button>
+      <button id="restartBtn" type="button" title="Restart">↻</button>
     </div>
-
   </div>
 
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-  <script src="script.js"></script>
+  <div id="overlay" class="overlay">
+    <section class="modal">
+      <h1>Aeroplane Run</h1>
+      <p>Clouds ke beech fly karo, enemy drones ko shoot karo, fuel cans collect karo, aur crash se bachkar high score banao.</p>
+      <button id="startBtn" class="start" type="button">Start Game</button>
+    </section>
+  </div>
 
+  <div class="touch-pad" aria-hidden="true">
+    <div class="touch-group">
+      <button class="up" data-key="ArrowUp" type="button">↑</button>
+      <button class="left" data-key="ArrowLeft" type="button">←</button>
+      <button class="down" data-key="ArrowDown" type="button">↓</button>
+      <button class="right" data-key="ArrowRight" type="button">→</button>
+    </div>
+    <button class="fire-touch" data-key="Space" type="button">●</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const bestEl = document.getElementById("best");
+    const healthBar = document.getElementById("healthBar");
+    const fuelBar = document.getElementById("fuelBar");
+    const overlay = document.getElementById("overlay");
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
+    const keys = new Set();
+    const rnd = (min, max) => Math.random() * (max - min) + min;
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+    let best = Number(localStorage.getItem("aeroplane-best") || 0);
+    let state = "menu";
+    let lastTime = 0;
+    let spawnTimer = 0;
+    let fuelTimer = 0;
+    let cloudTimer = 0;
+    let difficulty = 1;
+    let score = 0;
+    let shake = 0;
+
+    const plane = {
+      x: 132,
+      y: 320,
+      w: 82,
+      h: 42,
+      vy: 0,
+      health: 100,
+      fuel: 100,
+      fireCooldown: 0
+    };
+
+    const bullets = [];
+    const enemies = [];
+    const fuels = [];
+    const clouds = [];
+    const sparks = [];
+    const stars = Array.from({ length: 45 }, () => ({
+      x: rnd(0, canvas.width),
+      y: rnd(0, canvas.height * 0.55),
+      r: rnd(0.8, 2.2),
+      speed: rnd(8, 22)
+    }));
+
+    function resetGame() {
+      plane.x = 132;
+      plane.y = canvas.height * 0.5;
+      plane.vy = 0;
+      plane.health = 100;
+      plane.fuel = 100;
+      plane.fireCooldown = 0;
+      bullets.length = 0;
+      enemies.length = 0;
+      fuels.length = 0;
+      clouds.length = 0;
+      sparks.length = 0;
+      spawnTimer = 0;
+      fuelTimer = 1.4;
+      cloudTimer = 0;
+      difficulty = 1;
+      score = 0;
+      shake = 0;
+      state = "playing";
+      overlay.classList.add("hidden");
+      pauseBtn.textContent = "II";
+      updateHud();
+    }
+
+    function gameOver() {
+      state = "over";
+      best = Math.max(best, Math.floor(score));
+      localStorage.setItem("aeroplane-best", String(best));
+      overlay.classList.remove("hidden");
+      overlay.querySelector("h1").textContent = "Game Over";
+      overlay.querySelector("p").textContent = `Score ${Math.floor(score)}. Dobara try karo aur sky ka boss ban jao.`;
+      startBtn.textContent = "Play Again";
+      updateHud();
+    }
+
+    function updateHud() {
+      scoreEl.textContent = Math.floor(score);
+      bestEl.textContent = best;
+      healthBar.style.transform = `scaleX(${clamp(plane.health, 0, 100) / 100})`;
+      fuelBar.style.transform = `scaleX(${clamp(plane.fuel, 0, 100) / 100})`;
+    }
+
+    function drawPlane(x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      ctx.fillStyle = "#f5fbff";
+      ctx.beginPath();
+      ctx.moveTo(42, 0);
+      ctx.quadraticCurveTo(20, -22, -34, -15);
+      ctx.quadraticCurveTo(-48, -5, -34, 15);
+      ctx.quadraticCurveTo(20, 22, 42, 0);
+      ctx.fill();
+
+      ctx.fillStyle = "#2d83c5";
+      ctx.beginPath();
+      ctx.moveTo(-4, -6);
+      ctx.lineTo(-34, -42);
+      ctx.lineTo(14, -12);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#2a9fca";
+      ctx.beginPath();
+      ctx.moveTo(-8, 8);
+      ctx.lineTo(-36, 38);
+      ctx.lineTo(18, 12);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#f05c6c";
+      ctx.beginPath();
+      ctx.moveTo(-34, -13);
+      ctx.lineTo(-56, -30);
+      ctx.lineTo(-48, -4);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#162b45";
+      ctx.beginPath();
+      ctx.ellipse(16, -6, 11, 7, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ff9e35";
+      ctx.beginPath();
+      ctx.moveTo(-48, -6);
+      ctx.lineTo(-70 - Math.random() * 9, 0);
+      ctx.lineTo(-48, 6);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawCloud(cloud) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${cloud.alpha})`;
+      ctx.beginPath();
+      ctx.arc(cloud.x, cloud.y, cloud.r, 0, Math.PI * 2);
+      ctx.arc(cloud.x + cloud.r * 0.82, cloud.y + 5, cloud.r * 0.82, 0, Math.PI * 2);
+      ctx.arc(cloud.x - cloud.r * 0.8, cloud.y + 7, cloud.r * 0.7, 0, Math.PI * 2);
+      ctx.rect(cloud.x - cloud.r * 1.35, cloud.y + 5, cloud.r * 2.8, cloud.r * 0.7);
+      ctx.fill();
+    }
+
+    function drawEnemy(enemy) {
+      ctx.save();
+      ctx.translate(enemy.x, enemy.y);
+      ctx.fillStyle = "#32445e";
+      ctx.fillRect(-24, -12, 48, 24);
+      ctx.fillStyle = "#ff5c6f";
+      ctx.beginPath();
+      ctx.moveTo(-24, -12);
+      ctx.lineTo(-46, 0);
+      ctx.lineTo(-24, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#7fe4ff";
+      ctx.fillRect(6, -7, 13, 14);
+      ctx.strokeStyle = "rgba(255,255,255,.35)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-6, -22);
+      ctx.lineTo(18, 22);
+      ctx.moveTo(18, -22);
+      ctx.lineTo(-6, 22);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawFuel(can) {
+      ctx.save();
+      ctx.translate(can.x, can.y);
+      ctx.fillStyle = "#ffd35b";
+      ctx.fillRect(-15, -18, 30, 36);
+      ctx.fillStyle = "#17304a";
+      ctx.fillRect(-8, -12, 16, 9);
+      ctx.fillStyle = "#38d67a";
+      ctx.fillRect(-8, 2, 16, 9);
+      ctx.fillStyle = "#ffd35b";
+      ctx.fillRect(8, -25, 10, 9);
+      ctx.restore();
+    }
+
+    function burst(x, y, color) {
+      for (let i = 0; i < 14; i++) {
+        sparks.push({
+          x,
+          y,
+          vx: rnd(-160, 160),
+          vy: rnd(-160, 160),
+          life: rnd(0.25, 0.55),
+          color
+        });
+      }
+    }
+
+    function collide(a, b, padding = 0) {
+      return Math.abs(a.x - b.x) < (a.w + b.w) / 2 - padding &&
+        Math.abs(a.y - b.y) < (a.h + b.h) / 2 - padding;
+    }
+
+    function shoot() {
+      if (plane.fireCooldown > 0 || state !== "playing") return;
+      bullets.push({ x: plane.x + 48, y: plane.y - 2, w: 20, h: 6, speed: 620 });
+      plane.fireCooldown = 0.18;
+    }
+
+    function update(dt) {
+      if (state !== "playing") return;
+
+      difficulty += dt * 0.018;
+      score += dt * 12 * difficulty;
+      plane.fireCooldown -= dt;
+      plane.fuel -= dt * 3.8;
+
+      const thrust = (keys.has("ArrowUp") || keys.has("KeyW")) ? -560 : 0;
+      const dive = (keys.has("ArrowDown") || keys.has("KeyS")) ? 430 : 0;
+      const left = (keys.has("ArrowLeft") || keys.has("KeyA")) ? -250 : 0;
+      const right = (keys.has("ArrowRight") || keys.has("KeyD")) ? 250 : 0;
+      if (keys.has("Space")) shoot();
+
+      plane.vy += (260 + thrust + dive) * dt;
+      plane.vy *= 0.985;
+      plane.y += plane.vy * dt;
+      plane.x += (left + right) * dt;
+      plane.y = clamp(plane.y, 44, canvas.height - 74);
+      plane.x = clamp(plane.x, 62, canvas.width * 0.42);
+
+      if (plane.y <= 45 || plane.y >= canvas.height - 75) {
+        plane.health -= dt * 10;
+      }
+
+      if (plane.fuel <= 0) {
+        plane.health -= dt * 18;
+      }
+
+      spawnTimer -= dt;
+      fuelTimer -= dt;
+      cloudTimer -= dt;
+
+      if (spawnTimer <= 0) {
+        enemies.push({
+          x: canvas.width + 60,
+          y: rnd(70, canvas.height - 110),
+          w: 58,
+          h: 34,
+          speed: rnd(180, 260) * difficulty
+        });
+        spawnTimer = rnd(0.65, 1.15) / Math.sqrt(difficulty);
+      }
+
+      if (fuelTimer <= 0) {
+        fuels.push({
+          x: canvas.width + 45,
+          y: rnd(82, canvas.height - 120),
+          w: 32,
+          h: 42,
+          speed: rnd(145, 205)
+        });
+        fuelTimer = rnd(4.2, 6.8);
+      }
+
+      if (cloudTimer <= 0) {
+        clouds.push({
+          x: canvas.width + 90,
+          y: rnd(45, canvas.height * 0.62),
+          r: rnd(22, 52),
+          speed: rnd(35, 95),
+          alpha: rnd(0.35, 0.82)
+        });
+        cloudTimer = rnd(0.35, 0.8);
+      }
+
+      for (const star of stars) {
+        star.x -= star.speed * dt;
+        if (star.x < -6) {
+          star.x = canvas.width + 6;
+          star.y = rnd(0, canvas.height * 0.55);
+        }
+      }
+
+      for (const item of [...clouds, ...fuels, ...enemies]) {
+        item.x -= item.speed * dt;
+      }
+
+      for (const bullet of bullets) {
+        bullet.x += bullet.speed * dt;
+      }
+
+      for (const spark of sparks) {
+        spark.x += spark.vx * dt;
+        spark.y += spark.vy * dt;
+        spark.life -= dt;
+      }
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+        if (enemy.x < -80) {
+          enemies.splice(i, 1);
+          continue;
+        }
+
+        if (collide({ ...plane, w: 72, h: 34 }, enemy, 6)) {
+          plane.health -= 22;
+          shake = 0.2;
+          burst(enemy.x, enemy.y, "#ff5c6f");
+          enemies.splice(i, 1);
+          continue;
+        }
+
+        for (let j = bullets.length - 1; j >= 0; j--) {
+          if (collide(bullets[j], enemy, -3)) {
+            score += 80;
+            burst(enemy.x, enemy.y, "#ffd35b");
+            enemies.splice(i, 1);
+            bullets.splice(j, 1);
+            break;
+          }
+        }
+      }
+
+      for (let i = fuels.length - 1; i >= 0; i--) {
+        const can = fuels[i];
+        if (can.x < -50) {
+          fuels.splice(i, 1);
+          continue;
+        }
+        if (collide({ ...plane, w: 72, h: 34 }, can, 2)) {
+          plane.fuel = clamp(plane.fuel + 34, 0, 100);
+          score += 45;
+          burst(can.x, can.y, "#38d67a");
+          fuels.splice(i, 1);
+        }
+      }
+
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        if (bullets[i].x > canvas.width + 40) bullets.splice(i, 1);
+      }
+      for (let i = clouds.length - 1; i >= 0; i--) {
+        if (clouds[i].x < -150) clouds.splice(i, 1);
+      }
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        if (sparks[i].life <= 0) sparks.splice(i, 1);
+      }
+
+      shake = Math.max(0, shake - dt);
+      if (plane.health <= 0) gameOver();
+      updateHud();
+    }
+
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      sky.addColorStop(0, "#58b9ef");
+      sky.addColorStop(0.55, "#bdeeff");
+      sky.addColorStop(1, "#f8d698");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "rgba(255,255,255,.48)";
+      for (const star of stars) {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "rgba(15, 63, 89, 0.16)";
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height - 78);
+      for (let x = 0; x <= canvas.width; x += 80) {
+        ctx.lineTo(x, canvas.height - 90 - Math.sin(x * 0.018) * 24);
+      }
+      ctx.lineTo(canvas.width, canvas.height);
+      ctx.lineTo(0, canvas.height);
+      ctx.fill();
+    }
+
+    function draw() {
+      ctx.save();
+      if (shake > 0) ctx.translate(rnd(-5, 5), rnd(-4, 4));
+      drawBackground();
+      clouds.forEach(drawCloud);
+
+      ctx.fillStyle = "#fff8a8";
+      for (const bullet of bullets) {
+        ctx.fillRect(bullet.x - bullet.w / 2, bullet.y - bullet.h / 2, bullet.w, bullet.h);
+      }
+
+      fuels.forEach(drawFuel);
+      enemies.forEach(drawEnemy);
+
+      for (const spark of sparks) {
+        ctx.globalAlpha = clamp(spark.life * 2, 0, 1);
+        ctx.fillStyle = spark.color;
+        ctx.beginPath();
+        ctx.arc(spark.x, spark.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      drawPlane(plane.x, plane.y);
+      ctx.restore();
+    }
+
+    function loop(time) {
+      const dt = Math.min(0.033, (time - lastTime) / 1000 || 0);
+      lastTime = time;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("keydown", (event) => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) {
+        event.preventDefault();
+      }
+      keys.add(event.code);
+      if (event.code === "KeyP") togglePause();
+      if (event.code === "Enter" && state !== "playing") resetGame();
+    });
+
+    window.addEventListener("keyup", (event) => {
+      keys.delete(event.code);
+    });
+
+    function setTouchKey(button, active) {
+      const code = button.dataset.key;
+      if (active) {
+        keys.add(code);
+      } else {
+        keys.delete(code);
+      }
+    }
+
+    document.querySelectorAll("[data-key]").forEach((button) => {
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        button.setPointerCapture(event.pointerId);
+        setTouchKey(button, true);
+      });
+      button.addEventListener("pointerup", () => setTouchKey(button, false));
+      button.addEventListener("pointercancel", () => setTouchKey(button, false));
+      button.addEventListener("pointerleave", () => setTouchKey(button, false));
+    });
+
+    function togglePause() {
+      if (state === "playing") {
+        state = "paused";
+        pauseBtn.textContent = "▶";
+        overlay.classList.remove("hidden");
+        overlay.querySelector("h1").textContent = "Paused";
+        overlay.querySelector("p").textContent = "Resume karo aur flight continue rakho.";
+        startBtn.textContent = "Resume";
+      } else if (state === "paused") {
+        state = "playing";
+        pauseBtn.textContent = "II";
+        overlay.classList.add("hidden");
+      }
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (state === "paused") {
+        togglePause();
+      } else {
+        resetGame();
+      }
+    });
+    pauseBtn.addEventListener("click", togglePause);
+    restartBtn.addEventListener("click", resetGame);
+
+    bestEl.textContent = best;
+    draw();
+    requestAnimationFrame(loop);
+  </script>
 </body>
 </html>
